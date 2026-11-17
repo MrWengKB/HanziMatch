@@ -133,19 +133,12 @@ function toWords(entries, targetPairs) {
 
     let missing = targetPairs - words.length;
     if (missing > 0) {
-        // 为避免配错后卡住：补充的拼音2 不能和已用的读音重复，
-        // 而且这个多音字的拼音1 也不能和别的字同音
-        const used = new Set(words.map(w => w.pinyins[0]));
-        const count = {};
-        words.forEach(w => { count[w.pinyins[0]] = (count[w.pinyins[0]] || 0) + 1; });
-        const polyphones = words.filter(w => w.extra.length > 0 && count[w.pinyins[0]] === 1);
+        // “同样的字不能重复配同样的拼音”保证了补充后一定能全部配完
+        const polyphones = words.filter(w => w.extra.length > 0);
         shuffleArray(polyphones);
         for (const w of polyphones) {
             if (missing <= 0) break;
-            const p2 = w.extra.find(p => !used.has(p));
-            if (!p2) continue;
-            w.pinyins.push(p2);
-            used.add(p2);
+            w.pinyins.push(w.extra[0]);
             missing--;
         }
     }
@@ -180,6 +173,7 @@ let words = [];
 let cards = [];
 let selectedCards = [];
 let matchedPairs = 0;
+let usedPairs = new Set();   // 已经配过的“字|拼音”
 let totalPairs = 0;
 let startTime = null;
 let timerInterval = null;
@@ -281,6 +275,10 @@ function initGame() {
     // 重置游戏状态
     selectedCards = [];
     matchedPairs = 0;
+    usedPairs = new Set();
+
+    // 本局有多音字时显示提示
+    document.getElementById('gameHint').classList.toggle('hidden', !words.some(w => w.pinyins.length > 1));
 
     startTimer();
 }
@@ -319,16 +317,20 @@ function checkMatch() {
 
     // 一张汉字卡 + 一张拼音卡，且汉字的读音中包含该拼音即可配对
     // （同音字可以互相配对）
+    // 同样的字不能重复配同样的拼音（多音字的每个读音只能配一次）
     let isMatch = false;
+    let pairKey = null;
 
-    if (first.card.type === 'character' && second.card.type === 'pinyin') {
-        isMatch = first.card.pinyins.includes(second.card.pinyin);
-    } else if (first.card.type === 'pinyin' && second.card.type === 'character') {
-        isMatch = second.card.pinyins.includes(first.card.pinyin);
+    const charCard = first.card.type === 'character' ? first.card : second.card;
+    const pinyinCard = first.card.type === 'pinyin' ? first.card : second.card;
+    if (charCard.type === 'character' && pinyinCard.type === 'pinyin') {
+        pairKey = charCard.wordIndex + '|' + pinyinCard.pinyin;
+        isMatch = charCard.pinyins.includes(pinyinCard.pinyin) && !usedPairs.has(pairKey);
     }
 
     if (isMatch) {
         playSound(523.25, 0.2, 'correct'); // C5音
+        usedPairs.add(pairKey);
 
         setTimeout(() => {
             const cardElements = document.querySelectorAll('.card');

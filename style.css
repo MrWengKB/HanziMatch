@@ -330,3 +330,13 @@ textarea:focus {
     font-size: 18px;
     margin: -20px 0 15px;
 }
+
+.game-hint {
+    text-align: center;
+    color: #b8860b;
+    background: #fff8e1;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin: -15px 0 20px;
+    font-size: 16px;
+}
