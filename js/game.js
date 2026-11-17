@@ -116,11 +116,12 @@ function roundText(total) {
 }
 
 // 字库格式 { char, pinyin } → 游戏内部格式 { character, pinyins }
-// 多音字（拼音1 + 拼音2）每个读音各生成一对卡片
+// 字库里的多音字只用拼音1（课文中的读音），拼音2 不出卡片也不参与配对
+// （自定义字表仍然可以一个字写多个读音）
 function toWords(entries) {
     return entries.map(e => ({
         character: e.char,
-        pinyins: e.pinyins
+        pinyins: [e.pinyin]
     }));
 }
 
