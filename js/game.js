@@ -42,7 +42,7 @@ async function initSelectors() {
     if (gradeSelect.options.length === 0) addOption(gradeSelect, '', '（无字库）');
 
     const saved = loadSaved();
-    if (saved.count) wordCountInput.value = saved.count;
+    if (saved.count && hasOption(wordCountInput, saved.count)) wordCountInput.value = saved.count;
     if (saved.grade && hasOption(gradeSelect, saved.grade)) gradeSelect.value = saved.grade;
     fillLessonOptions();
     if (saved.lesson && hasOption(lessonSelect, saved.lesson)) lessonSelect.value = saved.lesson;
@@ -80,7 +80,6 @@ function updateLessonInfo() {
     const preview = document.getElementById('lessonPreview');
     const customArea = document.getElementById('customArea');
 
-    document.getElementById('wordCountValue').textContent = wordCountInput.value;
     saveSelection();
 
     // 自定义字表用全部输入的字，不显示字数

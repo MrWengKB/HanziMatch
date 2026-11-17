@@ -26,8 +26,13 @@
             </div>
             <div class="lesson-picker" id="countPicker">
                 <label for="wordCount">字数：</label>
-                <input type="range" id="wordCount" min="4" max="30" step="1" value="20" oninput="updateLessonInfo()">
-                <span class="count-value" id="wordCountValue">20</span>
+                <select id="wordCount" onchange="updateLessonInfo()">
+                    <option value="6">6 字</option>
+                    <option value="10">10 字</option>
+                    <option value="15">15 字</option>
+                    <option value="20" selected>20 字</option>
+                    <option value="30">30 字</option>
+                </select>
             </div>
             <div class="lesson-info" id="lessonInfo"></div>
             <div class="lesson-preview" id="lessonPreview"></div>
