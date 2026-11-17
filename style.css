@@ -307,6 +307,20 @@ textarea:focus {
     border-color: #667eea;
 }
 
+.lesson-picker input[type="range"] {
+    flex: 1;
+    min-width: 150px;
+    accent-color: #667eea;
+    cursor: pointer;
+}
+
+.count-value {
+    min-width: 2em;
+    font-weight: bold;
+    color: #667eea;
+    text-align: right;
+}
+
 .lesson-info {
     color: #888;
     font-size: 16px;

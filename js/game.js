@@ -1,13 +1,13 @@
 // ===== 字表来源：年级 + 课次选择（数据来自 hanzilist.csv） =====
 const ALL_KEY = 'ALL';          // 整个年级
 const CUSTOM_KEY = 'CUSTOM';    // 自定义字表
-const ALL_ROUND_SIZE = 20;      // 选“整个年级”时，每局随机抽取的字数
 const STORAGE_KEY = 'hanzimatch.selection';
 
 let GRADES = {};                // { 年级: { 课次: [{ char, pinyin }] } }
 
 const gradeSelect = document.getElementById('gradeSelect');
 const lessonSelect = document.getElementById('lessonSelect');
+const wordCountInput = document.getElementById('wordCount');   // 每局字数
 
 function loadSaved() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
@@ -15,7 +15,7 @@ function loadSaved() {
 
 function saveSelection() {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ grade: gradeSelect.value, lesson: lessonSelect.value }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ grade: gradeSelect.value, lesson: lessonSelect.value, count: wordCountInput.value }));
     } catch (e) { /* 忽略 */ }
 }
 
@@ -42,6 +42,7 @@ async function initSelectors() {
     if (gradeSelect.options.length === 0) addOption(gradeSelect, '', '（无字库）');
 
     const saved = loadSaved();
+    if (saved.count) wordCountInput.value = saved.count;
     if (saved.grade && hasOption(gradeSelect, saved.grade)) gradeSelect.value = saved.grade;
     fillLessonOptions();
     if (saved.lesson && hasOption(lessonSelect, saved.lesson)) lessonSelect.value = saved.lesson;
@@ -79,7 +80,11 @@ function updateLessonInfo() {
     const preview = document.getElementById('lessonPreview');
     const customArea = document.getElementById('customArea');
 
+    document.getElementById('wordCountValue').textContent = wordCountInput.value;
     saveSelection();
+
+    // 自定义字表用全部输入的字，不显示字数
+    document.getElementById('countPicker').classList.toggle('hidden', key === CUSTOM_KEY);
 
     if (key === CUSTOM_KEY) {
         customArea.classList.remove('hidden');
@@ -93,14 +98,22 @@ function updateLessonInfo() {
     if (key === ALL_KEY) {
         const n = Object.keys(GRADES[grade]).length;
         const total = gradeWords(GRADES, grade).length;
-        info.textContent = `共 ${n} 课 ${total} 字，每局随机抽取 ${Math.min(ALL_ROUND_SIZE, total)} 字`;
+        info.textContent = `共 ${n} 课 ${total} 字，${roundText(total)}`;
         preview.classList.add('hidden');
     } else {
         const entries = GRADES[grade][key] || [];
-        info.textContent = `共 ${entries.length} 字`;
+        info.textContent = `共 ${entries.length} 字，${roundText(entries.length)}`;
         preview.textContent = entries.map(e => e.char).join(' ');
         preview.classList.remove('hidden');
     }
+}
+
+function roundSize() {
+    return parseInt(wordCountInput.value, 10) || 20;
+}
+
+function roundText(total) {
+    return total > roundSize() ? `每局随机抽取 ${roundSize()} 字` : '每局全部使用';
 }
 
 // 字库格式 { char, pinyin } → 游戏内部格式 { character, pinyins }
@@ -129,12 +142,10 @@ function buildWords() {
     const grade = gradeSelect.value;
     const key = lessonSelect.value;
     if (key === CUSTOM_KEY) return parseCustomInput();
-    if (key === ALL_KEY) {
-        const all = gradeWords(GRADES, grade).slice();
-        shuffleArray(all);
-        return toWords(all.slice(0, ALL_ROUND_SIZE));
-    }
-    return toWords((GRADES[grade] || {})[key] || []);
+    const pool = (key === ALL_KEY ? gradeWords(GRADES, grade) : (GRADES[grade] || {})[key] || []).slice();
+    // 字数超过“每局字数”时随机抽取
+    shuffleArray(pool);
+    return toWords(pool.slice(0, roundSize()));
 }
 
 // ===== 游戏 =====
@@ -344,8 +355,8 @@ function gameComplete() {
 
 function replayGame() {
     document.getElementById('successModal').style.display = 'none';
-    // “整个一年级”每局重新随机抽字
-    if (lessonSelect.value === ALL_KEY) words = buildWords();
+    // 每局重新随机抽字（自定义字表除外）
+    if (lessonSelect.value !== CUSTOM_KEY) words = buildWords();
     initGame();
 }
 
