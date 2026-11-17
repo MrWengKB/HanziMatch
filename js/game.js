@@ -1,83 +1,109 @@
-// ===== 字表来源：课次选择 =====
-const ALL_KEY = 'ALL';          // 整个一年级
+// ===== 字表来源：年级 + 课次选择（数据来自 hanzilist.csv） =====
+const ALL_KEY = 'ALL';          // 整个年级
 const CUSTOM_KEY = 'CUSTOM';    // 自定义字表
-const ALL_ROUND_SIZE = 20;      // 选“整个一年级”时，每局随机抽取的字数
-const STORAGE_KEY = 'hanzimatch.lesson';
+const ALL_ROUND_SIZE = 20;      // 选“整个年级”时，每局随机抽取的字数
+const STORAGE_KEY = 'hanzimatch.selection';
 
+let GRADES = {};                // { 年级: { 课次: [{ char, pinyin }] } }
+
+const gradeSelect = document.getElementById('gradeSelect');
 const lessonSelect = document.getElementById('lessonSelect');
 
-function initLessonOptions() {
-    const allOpt = document.createElement('option');
-    allOpt.value = ALL_KEY;
-    allOpt.textContent = '整个一年级';
-    lessonSelect.appendChild(allOpt);
+function loadSaved() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; }
+}
 
-    for (const lesson in ALL_LESSONS) {
-        const opt = document.createElement('option');
-        opt.value = lesson;
-        opt.textContent = lesson;
-        lessonSelect.appendChild(opt);
+function saveSelection() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ grade: gradeSelect.value, lesson: lessonSelect.value }));
+    } catch (e) { /* 忽略 */ }
+}
+
+function addOption(select, value, text) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = text;
+    select.appendChild(opt);
+}
+
+function hasOption(select, value) {
+    return [...select.options].some(o => o.value === value);
+}
+
+async function initSelectors() {
+    try {
+        GRADES = await loadHanziList();
+    } catch (err) {
+        GRADES = {};
+        document.getElementById('lessonInfo').textContent = hanziListErrorMessage(err);
     }
 
-    const customOpt = document.createElement('option');
-    customOpt.value = CUSTOM_KEY;
-    customOpt.textContent = '自定义字表';
-    lessonSelect.appendChild(customOpt);
+    for (const grade in GRADES) addOption(gradeSelect, grade, grade);
+    if (gradeSelect.options.length === 0) addOption(gradeSelect, '', '（无字库）');
 
-    // 记住上次选择的课次
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved && [...lessonSelect.options].some(o => o.value === saved)) {
-            lessonSelect.value = saved;
-        }
-    } catch (e) { /* 忽略 */ }
+    const saved = loadSaved();
+    if (saved.grade && hasOption(gradeSelect, saved.grade)) gradeSelect.value = saved.grade;
+    fillLessonOptions();
+    if (saved.lesson && hasOption(lessonSelect, saved.lesson)) lessonSelect.value = saved.lesson;
+    else if (gradeSelect.value === '') lessonSelect.value = CUSTOM_KEY;
 
     updateLessonInfo();
 }
 
-function getAllEntries() {
-    let list = [];
-    for (const k in ALL_LESSONS) list = list.concat(ALL_LESSONS[k]);
-    return list;
+function fillLessonOptions() {
+    const grade = gradeSelect.value;
+    lessonSelect.innerHTML = '';
+    if (GRADES[grade]) {
+        addOption(lessonSelect, ALL_KEY, `整个${grade}`);
+        for (const lesson in GRADES[grade]) addOption(lessonSelect, lesson, lesson);
+    }
+    addOption(lessonSelect, CUSTOM_KEY, '自定义字表');
 }
 
-function lessonLabel(key) {
-    if (key === ALL_KEY) return '整个一年级';
+function onGradeChange() {
+    fillLessonOptions();
+    updateLessonInfo();
+}
+
+function lessonLabel() {
+    const key = lessonSelect.value;
     if (key === CUSTOM_KEY) return '自定义字表';
-    return key;
+    if (key === ALL_KEY) return `整个${gradeSelect.value}`;
+    return `${gradeSelect.value} · ${key}`;
 }
 
 function updateLessonInfo() {
+    const grade = gradeSelect.value;
     const key = lessonSelect.value;
     const info = document.getElementById('lessonInfo');
     const preview = document.getElementById('lessonPreview');
     const customArea = document.getElementById('customArea');
 
-    try { localStorage.setItem(STORAGE_KEY, key); } catch (e) { /* 忽略 */ }
+    saveSelection();
 
     if (key === CUSTOM_KEY) {
         customArea.classList.remove('hidden');
-        info.textContent = '';
         preview.classList.add('hidden');
+        if (GRADES[grade]) info.textContent = '';
         return;
     }
 
     customArea.classList.add('hidden');
-    preview.classList.remove('hidden');
 
     if (key === ALL_KEY) {
-        const total = getAllEntries().length;
-        const n = Object.keys(ALL_LESSONS).length;
-        info.textContent = `共 ${n} 课 ${total} 字，每局随机抽取 ${ALL_ROUND_SIZE} 字`;
+        const n = Object.keys(GRADES[grade]).length;
+        const total = gradeWords(GRADES, grade).length;
+        info.textContent = `共 ${n} 课 ${total} 字，每局随机抽取 ${Math.min(ALL_ROUND_SIZE, total)} 字`;
         preview.classList.add('hidden');
     } else {
-        const entries = ALL_LESSONS[key] || [];
+        const entries = GRADES[grade][key] || [];
         info.textContent = `共 ${entries.length} 字`;
         preview.textContent = entries.map(e => e.char).join(' ');
+        preview.classList.remove('hidden');
     }
 }
 
-// HanziBomb 格式 { char, pinyin } → 游戏内部格式 { character, pinyins }
+// 字库格式 { char, pinyin } → 游戏内部格式 { character, pinyins }
 // pinyin 中用空格分隔的多个读音会当作多音字处理
 function toWords(entries) {
     return entries.map(e => ({
@@ -100,14 +126,15 @@ function parseCustomInput() {
 
 // 根据当前课次生成本局字表
 function buildWords() {
+    const grade = gradeSelect.value;
     const key = lessonSelect.value;
     if (key === CUSTOM_KEY) return parseCustomInput();
     if (key === ALL_KEY) {
-        const all = getAllEntries().slice();
+        const all = gradeWords(GRADES, grade).slice();
         shuffleArray(all);
         return toWords(all.slice(0, ALL_ROUND_SIZE));
     }
-    return toWords(ALL_LESSONS[key] || []);
+    return toWords((GRADES[grade] || {})[key] || []);
 }
 
 // ===== 游戏 =====
@@ -161,7 +188,7 @@ function startGame() {
         return;
     }
 
-    document.getElementById('gameLesson').textContent = lessonLabel(lessonSelect.value);
+    document.getElementById('gameLesson').textContent = lessonLabel();
 
     // 显示游戏界面
     document.getElementById('inputScreen').classList.add('hidden');
@@ -335,4 +362,4 @@ function closeGame() {
     document.getElementById('endScreen').classList.remove('hidden');
 }
 
-initLessonOptions();
+initSelectors();

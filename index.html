@@ -13,6 +13,12 @@
             <h1>拼音配对游戏 V2</h1>
 
             <div class="lesson-picker">
+                <label for="gradeSelect">年级：</label>
+                <select id="gradeSelect" onchange="onGradeChange()">
+                    <!-- 选项由 js/game.js 生成 -->
+                </select>
+            </div>
+            <div class="lesson-picker">
                 <label for="lessonSelect">课次：</label>
                 <select id="lessonSelect" onchange="updateLessonInfo()">
                     <!-- 选项由 js/game.js 生成 -->
@@ -42,7 +48,7 @@
                 <textarea id="wordInput" placeholder="请输入字表，每行格式：汉字 拼音1 拼音2 ...&#10;&#10;单音字示例：&#10;天 tiān&#10;人 rén&#10;&#10;多音字示例：&#10;地 dì de&#10;和 hé hè huó huò&#10;长 cháng zhǎng"></textarea>
             </div>
 
-            <button class="btn btn-primary" onclick="startGame()">生成游戏</button>
+            <button class="btn btn-primary" id="startBtn" onclick="startGame()">生成游戏</button>
         </div>
 
         <!-- 界面二：游戏界面 -->
@@ -73,7 +79,7 @@
         </div>
     </div>
 
-    <script src="js/lessons.js"></script>
+    <script src="js/hanzilist.js"></script>
     <script src="js/game.js"></script>
 </body>
 </html>
