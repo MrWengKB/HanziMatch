@@ -97,11 +97,11 @@ function updateLessonInfo() {
     if (key === ALL_KEY) {
         const n = Object.keys(GRADES[grade]).length;
         const total = gradeWords(GRADES, grade).length;
-        info.textContent = `共 ${n} 课 ${total} 字，${roundText(total)}`;
+        info.textContent = `共 ${n} 课 ${total} 字，${roundText(gradeWords(GRADES, grade))}`;
         preview.classList.add('hidden');
     } else {
         const entries = GRADES[grade][key] || [];
-        info.textContent = `共 ${entries.length} 字，${roundText(entries.length)}`;
+        info.textContent = `共 ${entries.length} 字，${roundText(entries)}`;
         preview.textContent = entries.map(e => e.char).join(' ');
         preview.classList.remove('hidden');
     }
@@ -111,18 +111,45 @@ function roundSize() {
     return parseInt(wordCountInput.value, 10) || 20;
 }
 
-function roundText(total) {
-    return total > roundSize() ? `每局随机抽取 ${roundSize()} 字` : '每局全部使用';
+function roundText(entries) {
+    const n = roundSize();
+    if (entries.length >= n) return `每局随机抽取 ${n} 字`;
+    const extra = toWords(entries, n).reduce((sum, w) => sum + w.pinyins.length - 1, 0);
+    return extra > 0
+        ? `每局全部使用，字数不够，用 ${extra} 个多音字的第二个读音补充`
+        : '每局全部使用';
 }
 
 // 字库格式 { char, pinyin } → 游戏内部格式 { character, pinyins }
-// 字库里的多音字只用拼音1（课文中的读音），拼音2 不出卡片也不参与配对
+// 多音字优先只用拼音1（课文中的读音）。
+// 只有字数不够“每局字数”时，才用多音字的拼音2 补充配对。
 // （自定义字表仍然可以一个字写多个读音）
-function toWords(entries) {
-    return entries.map(e => ({
+function toWords(entries, targetPairs) {
+    const words = entries.map(e => ({
         character: e.char,
-        pinyins: [e.pinyin]
+        pinyins: [e.pinyin],
+        extra: e.pinyins.slice(1)
     }));
+
+    let missing = targetPairs - words.length;
+    if (missing > 0) {
+        // 为避免配错后卡住：补充的拼音2 不能和已用的读音重复，
+        // 而且这个多音字的拼音1 也不能和别的字同音
+        const used = new Set(words.map(w => w.pinyins[0]));
+        const count = {};
+        words.forEach(w => { count[w.pinyins[0]] = (count[w.pinyins[0]] || 0) + 1; });
+        const polyphones = words.filter(w => w.extra.length > 0 && count[w.pinyins[0]] === 1);
+        shuffleArray(polyphones);
+        for (const w of polyphones) {
+            if (missing <= 0) break;
+            const p2 = w.extra.find(p => !used.has(p));
+            if (!p2) continue;
+            w.pinyins.push(p2);
+            used.add(p2);
+            missing--;
+        }
+    }
+    return words.map(({ character, pinyins }) => ({ character, pinyins }));
 }
 
 function parseCustomInput() {
@@ -143,9 +170,9 @@ function buildWords() {
     const key = lessonSelect.value;
     if (key === CUSTOM_KEY) return parseCustomInput();
     const pool = (key === ALL_KEY ? gradeWords(GRADES, grade) : (GRADES[grade] || {})[key] || []).slice();
-    // 字数超过“每局字数”时随机抽取
+    // 字数超过“每局字数”时随机抽取；不够时用多音字的拼音2 补充
     shuffleArray(pool);
-    return toWords(pool.slice(0, roundSize()));
+    return toWords(pool.slice(0, roundSize()), roundSize());
 }
 
 // ===== 游戏 =====
