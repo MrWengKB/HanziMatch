@@ -104,11 +104,11 @@ function updateLessonInfo() {
 }
 
 // 字库格式 { char, pinyin } → 游戏内部格式 { character, pinyins }
-// pinyin 中用空格分隔的多个读音会当作多音字处理
+// 多音字（拼音1 + 拼音2）每个读音各生成一对卡片
 function toWords(entries) {
     return entries.map(e => ({
         character: e.char,
-        pinyins: String(e.pinyin).trim().split(/\s+/)
+        pinyins: e.pinyins
     }));
 }
 
