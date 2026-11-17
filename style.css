@@ -118,38 +118,101 @@ textarea:focus {
 
 .timer {
     text-align: center;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: bold;
     color: #667eea;
-    margin-bottom: 30px;
-    padding: 15px;
+    padding: 6px 16px;
     background: #f8f9fa;
     border-radius: 10px;
+    white-space: nowrap;
+}
+
+/* 游戏中：界面占满整个屏幕，卡片大小由 js/game.js 根据屏幕计算 */
+body.playing {
+    padding: 8px;
+    align-items: stretch;
+}
+
+body.playing .container {
+    max-width: 1400px;
+    padding: 12px 16px;
+    height: calc(100vh - 16px);
+    height: calc(100dvh - 16px);
+    display: flex;
+    flex-direction: column;
+}
+
+body.playing .game-screen {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .game-board {
+    flex: 1;
+    min-height: 0;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 20px;
+    justify-content: center;
+    align-content: center;
     width: 100%;
+    --pinyin-font: 28px;
+    --char-font: 36px;
 }
 
 .card {
-    min-height: 100px;
-    padding: 20px;
+    position: relative;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 28px;
+    font-size: var(--pinyin-font);
     font-weight: bold;
     color: white;
     cursor: pointer;
     transition: all 0.3s;
     user-select: none;
-    word-break: break-all;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.card.card-char {
+    font-size: var(--char-font);
+}
+
+/* 翻翻乐：卡片背面 */
+.card.face-down {
+    background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+    color: transparent;
+}
+
+.card.face-down::after {
+    content: '?';
+    position: absolute;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--char-font);
+}
+
+.card.flip {
+    animation: flip 0.3s ease-out;
+}
+
+@keyframes flip {
+    from {
+        transform: rotateY(90deg);
+    }
+    to {
+        transform: rotateY(0);
+    }
 }
 
 .card:hover {
@@ -254,17 +317,6 @@ textarea:focus {
         font-size: 1.8em;
     }
 
-    .game-board {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-    }
-
-    .card {
-        font-size: 20px;
-        min-height: 80px;
-        padding: 15px;
-    }
-
     .modal-content {
         padding: 30px;
     }
@@ -325,10 +377,32 @@ textarea:focus {
 }
 
 .game-lesson {
-    text-align: center;
     color: #888;
     font-size: 18px;
-    margin: -20px 0 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mode-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0 12px;
+    font-size: 17px;
+    color: #555;
+    cursor: pointer;
+}
+
+.mode-option input {
+    width: 20px;
+    height: 20px;
+    accent-color: #667eea;
+    cursor: pointer;
+}
+
+.mode-option strong {
+    color: #667eea;
 }
 
 .game-hint {
@@ -337,6 +411,6 @@ textarea:focus {
     background: #fff8e1;
     border-radius: 10px;
     padding: 8px 12px;
-    margin: -15px 0 20px;
-    font-size: 16px;
+    margin-bottom: 10px;
+    font-size: 15px;
 }

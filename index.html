@@ -34,6 +34,10 @@
                     <option value="30">30 字</option>
                 </select>
             </div>
+            <label class="mode-option">
+                <input type="checkbox" id="flipMode" onchange="saveSelection()">
+                <span><strong>翻翻乐</strong>：先看 3 秒，卡片翻过去后凭记忆配对</span>
+            </label>
             <div class="lesson-info" id="lessonInfo"></div>
             <div class="lesson-preview" id="lessonPreview"></div>
 
@@ -63,9 +67,10 @@
 
         <!-- 界面二：游戏界面 -->
         <div class="game-screen hidden" id="gameScreen">
-            <h1>拼音配对游戏</h1>
-            <div class="game-lesson" id="gameLesson"></div>
-            <div class="timer" id="timer">时间：00:00</div>
+            <div class="game-top">
+                <div class="game-lesson" id="gameLesson"></div>
+                <div class="timer" id="timer">时间：00:00</div>
+            </div>
             <div class="game-hint hidden" id="gameHint">💡 提示：同样的字不能重复配同样的拼音</div>
             <div class="game-board" id="gameBoard"></div>
         </div>
