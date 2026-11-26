@@ -10,11 +10,11 @@ def ksFile = System.getenv("ANDROID_KEYSTORE_FILE")
 def hasSigning = ksFile != null && new File(ksFile).exists()
 
 android {
-    namespace 'com.mrwengkb.hanzimatch'
+    namespace 'io.github.mrwengkb.hanzimatch'
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.mrwengkb.hanzimatch'
+        applicationId 'io.github.mrwengkb.hanzimatch'
         minSdk 24
         targetSdk 35
         versionCode versionProps['VERSION_CODE'].toInteger()

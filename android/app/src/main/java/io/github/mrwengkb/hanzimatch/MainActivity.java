@@ -1,4 +1,4 @@
-package com.mrwengkb.hanzimatch;
+package io.github.mrwengkb.hanzimatch;
 
 import android.app.Activity;
 import android.app.AlertDialog;
