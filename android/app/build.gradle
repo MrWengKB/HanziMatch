@@ -1,0 +1,68 @@
+plugins {
+    id 'com.android.application'
+}
+
+def versionProps = new Properties()
+file("../version.properties").withInputStream { versionProps.load(it) }
+
+// 签名信息来自环境变量（GitHub Actions secrets）
+def ksFile = System.getenv("ANDROID_KEYSTORE_FILE")
+def hasSigning = ksFile != null && new File(ksFile).exists()
+
+android {
+    namespace 'com.mrwengkb.hanzimatch'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.mrwengkb.hanzimatch'
+        minSdk 24
+        targetSdk 35
+        versionCode versionProps['VERSION_CODE'].toInteger()
+        versionName versionProps['VERSION_NAME']
+    }
+
+    signingConfigs {
+        release {
+            if (hasSigning) {
+                storeFile file(ksFile)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (hasSigning) signingConfig signingConfigs.release
+        }
+    }
+
+    buildFeatures { buildConfig true }
+
+    lint { checkReleaseBuilds false }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main { assets.srcDirs += ["$buildDir/generated/webassets"] }
+    }
+}
+
+// 把仓库根目录的网页文件打包进 APK（网页仍是唯一源码）
+def copyWebAssets = tasks.register('copyWebAssets', Copy) {
+    from(rootProject.file('..')) {
+        include 'index.html', 'style.css', 'js/**', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'hanzilist.csv'
+    }
+    into "$buildDir/generated/webassets/www"
+}
+preBuild.dependsOn copyWebAssets
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'androidx.core:core:1.13.1'
+}

@@ -403,3 +403,21 @@ body.playing .game-screen {
     margin-bottom: 10px;
     font-size: 15px;
 }
+
+/* 安卓 App：版本号与检查更新 */
+.app-update {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+}
+.app-update.hidden { display: none; }
+.link-btn {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 14px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 4px 8px;
+}

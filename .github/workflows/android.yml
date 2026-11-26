@@ -1,0 +1,74 @@
+name: Android build (APK + AAB)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Read version
+        id: ver
+        run: |
+          echo "name=$(grep '^VERSION_NAME=' android/version.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
+      - name: Build debug APK (no signing secrets yet)
+        if: env.HAS_SIGNING != 'true'
+        working-directory: android
+        run: |
+          echo "::warning::Signing secrets are not set. Building a debug APK only; no release is published."
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Decode keystore
+        if: env.HAS_SIGNING == 'true'
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build signed APK and AAB
+        if: env.HAS_SIGNING == 'true'
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease bundleRelease
+          mkdir -p ../dist
+          cp app/build/outputs/apk/release/app-release.apk ../dist/HanziMatch-v${{ steps.ver.outputs.name }}.apk
+          cp app/build/outputs/bundle/release/app-release.aab ../dist/HanziMatch-v${{ steps.ver.outputs.name }}.aab
+          ls -la ../dist
+
+      - name: Publish GitHub release (APK and AAB as separate files)
+        if: env.HAS_SIGNING == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ steps.ver.outputs.name }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              gh release upload "$TAG" dist/*.apk dist/*.aab --clobber
+            else
+              echo "Release $TAG already exists; bump android/version.properties to publish a new one."
+            fi
+          else
+            gh release create "$TAG" dist/*.apk dist/*.aab --title "拼音配对 $TAG" --notes "安卓版 $TAG：APK 可直接安装，AAB 用于上传 Google Play。"
+          fi
