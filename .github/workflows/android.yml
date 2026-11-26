@@ -21,8 +21,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
+      # ubuntu-latest 已预装 Android SDK（ANDROID_HOME）
       - name: Read version
         id: ver
         run: |
