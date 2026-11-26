@@ -59,6 +59,11 @@ def copyWebAssets = tasks.register('copyWebAssets', Copy) {
         include 'index.html', 'style.css', 'js/**', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'hanzilist.csv'
     }
     into "$buildDir/generated/webassets/www"
+    // App 里不加载 Google Analytics（不收集任何数据）
+    doLast {
+        def f = file("$buildDir/generated/webassets/www/index.html")
+        f.setText(f.getText('UTF-8').replaceAll(/(?s)<!-- GA-START.*?<!-- GA-END -->\s*/, ''), 'UTF-8')
+    }
 }
 preBuild.dependsOn copyWebAssets
 
