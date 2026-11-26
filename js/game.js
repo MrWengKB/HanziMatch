@@ -481,11 +481,5 @@ function backToMenu() {
     document.getElementById('inputScreen').classList.remove('hidden');
 }
 
-function closeGame() {
-    document.body.classList.remove('playing');
-    document.getElementById('gameScreen').classList.add('hidden');
-    document.getElementById('successModal').style.display = 'none';
-    document.getElementById('endScreen').classList.remove('hidden');
-}
 
 initSelectors();
