@@ -15,12 +15,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.view.WindowInsets;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
@@ -70,7 +72,25 @@ public class MainActivity extends Activity {
             }
         });
         webView.addJavascriptInterface(new AppBridge(), "AndroidApp");
-        setContentView(webView);
+        android.widget.FrameLayout root = new android.widget.FrameLayout(this);
+        root.setBackgroundColor(0xFF6F65C6);
+        root.addView(webView, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        // Android 15+ 强制全面屏：给状态栏、导航栏和刘海留出空间
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets b = insets.getInsets(
+                        WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                v.setPadding(b.left, b.top, b.right, b.bottom);
+            }
+            return insets;
+        });
+        setContentView(root);
+
+        // Android 13+ 返回手势（targetSdk 36 起不再调用 onBackPressed）
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleBack);
+        }
 
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
@@ -88,8 +108,12 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        handleBack();
+    }
+
+    private void handleBack() {
         if (webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+        else finish();
     }
 
     @Override
