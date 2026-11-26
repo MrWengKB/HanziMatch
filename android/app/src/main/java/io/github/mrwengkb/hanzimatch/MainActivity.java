@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
             webView.restoreState(savedInstanceState);
         } else {
             webView.loadUrl(START_URL);
-            checkForUpdate(false);
+            if (BuildConfig.SELF_UPDATE) checkForUpdate(false);
         }
     }
 
@@ -114,7 +114,10 @@ public class MainActivity extends Activity {
     /** 网页里调用：window.AndroidApp.checkUpdate() / getVersion() */
     private class AppBridge {
         @JavascriptInterface
-        public void checkUpdate() { main.post(() -> checkForUpdate(true)); }
+        public void checkUpdate() { if (BuildConfig.SELF_UPDATE) main.post(() -> checkForUpdate(true)); }
+
+        @JavascriptInterface
+        public boolean canUpdate() { return BuildConfig.SELF_UPDATE; }
 
         @JavascriptInterface
         public String getVersion() { return BuildConfig.VERSION_NAME; }

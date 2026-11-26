@@ -39,6 +39,20 @@ android {
         }
     }
 
+    // github：GitHub Release 的 APK，带“检查更新”
+    // play：上传 Google Play 的 AAB，Play 政策不允许应用自行更新，所以去掉
+    flavorDimensions = ['dist']
+    productFlavors {
+        github {
+            dimension 'dist'
+            buildConfigField 'boolean', 'SELF_UPDATE', 'true'
+        }
+        play {
+            dimension 'dist'
+            buildConfigField 'boolean', 'SELF_UPDATE', 'false'
+        }
+    }
+
     buildFeatures { buildConfig true }
 
     lint { checkReleaseBuilds false }

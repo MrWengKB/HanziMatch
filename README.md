@@ -6,7 +6,7 @@
 
 ## 安卓版
 
-`android/` 是安卓 App（WebView 打包本仓库的网页）。每次推送到 main，GitHub Actions 会分别生成 `.apk` 和 `.aab`，作为 Release 的两个独立文件发布（不打包压缩）。发布新版本时，提高 `android/version.properties` 里的 `VERSION_NAME` 和 `VERSION_CODE`。
+`android/` 是安卓 App（WebView 打包本仓库的网页）。每次推送到 main，GitHub Actions 会分别生成 `.apk`（GitHub 版，带检查更新）和 `.aab`（Google Play 版，按 Play 政策不含自行更新），作为 Release 的两个独立文件发布（不打包压缩）。发布新版本时，提高 `android/version.properties` 里的 `VERSION_NAME` 和 `VERSION_CODE`。
 
 App 启动时会自动检查 GitHub 上的最新版本，也可以在设置页点“检查更新”。发现新版本时可选择“安装”或“忽略”。
 

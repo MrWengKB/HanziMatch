@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "::warning::Signing secrets are not set. Building a debug APK only; no release is published."
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon assembleGithubDebug bundlePlayDebug
 
       - name: Decode keystore
         if: env.HAS_SIGNING == 'true'
@@ -50,10 +50,10 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleRelease bundleRelease
+          ./gradlew --no-daemon assembleGithubRelease bundlePlayRelease
           mkdir -p ../dist
-          cp app/build/outputs/apk/release/app-release.apk ../dist/HanziMatch-v${{ steps.ver.outputs.name }}.apk
-          cp app/build/outputs/bundle/release/app-release.aab ../dist/HanziMatch-v${{ steps.ver.outputs.name }}.aab
+          cp app/build/outputs/apk/github/release/app-github-release.apk ../dist/HanziMatch-v${{ steps.ver.outputs.name }}.apk
+          cp app/build/outputs/bundle/playRelease/app-play-release.aab ../dist/HanziMatch-v${{ steps.ver.outputs.name }}.aab
           ls -la ../dist
 
       - name: Publish GitHub release (APK and AAB as separate files)
@@ -69,5 +69,5 @@ jobs:
               echo "Release $TAG already exists; bump android/version.properties to publish a new one."
             fi
           else
-            gh release create "$TAG" dist/*.apk dist/*.aab --title "拼音配对 $TAG" --notes "安卓版 $TAG：APK 可直接安装，AAB 用于上传 Google Play。"
+            gh release create "$TAG" dist/*.apk dist/*.aab --title "拼音配对 $TAG" --notes "安卓版 $TAG：APK 可直接安装（带检查更新）；AAB 用于上传 Google Play（按 Play 政策不含自动更新）。"
           fi
