@@ -70,6 +70,19 @@ public class MainActivity extends Activity {
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 return loader.shouldInterceptRequest(request.getUrl());
             }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                if ("appassets.androidplatform.net".equals(uri.getHost())) {
+                    return false; // 本地页面，留在 App 内
+                }
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, uri)); // 外部链接交给浏览器打开
+                } catch (android.content.ActivityNotFoundException ignored) {
+                }
+                return true;
+            }
         });
         webView.addJavascriptInterface(new AppBridge(), "AndroidApp");
         android.widget.FrameLayout root = new android.widget.FrameLayout(this);

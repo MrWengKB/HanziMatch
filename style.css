@@ -412,6 +412,13 @@ body.playing .game-screen {
     color: #888;
 }
 .app-update.hidden { display: none; }
+.feedback-link {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 13px;
+}
+.feedback-link a { color: #aaa; text-decoration: none; }
+.feedback-link a:hover { color: #667eea; text-decoration: underline; }
 .link-btn {
     background: none;
     border: none;
